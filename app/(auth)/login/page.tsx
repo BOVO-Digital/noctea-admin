@@ -15,7 +15,8 @@ import { getClientAuth } from "@/lib/firebase-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Moon, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -97,11 +98,15 @@ export default function LoginPage() {
       >
         <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-8 shadow-2xl">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-center justify-center mb-4">
-              <Moon className="w-6 h-6 text-[#D4AF37]" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">NOCTEA Admin</h1>
-            <p className="text-[#9ba5b3] text-sm mt-1">Tableau de bord administrateur</p>
+            <Image
+              src="/logo-gold-navy.png"
+              alt="NOCTEA"
+              width={140}
+              height={100}
+              className="object-contain mb-2"
+              priority
+            />
+            <p className="text-[#9ba5b3] text-sm">Tableau de bord administrateur</p>
           </div>
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
