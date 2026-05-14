@@ -31,6 +31,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
       Image,
     ],
     content,
+    immediatelyRender: false,
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
     editorProps: {
       attributes: {

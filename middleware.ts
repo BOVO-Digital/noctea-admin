@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
-export async function middleware(request: NextRequest) {
+// Constante inline pour éviter toute importation de firebase-admin en Edge Runtime
+const SESSION_COOKIE_NAME = "noctea_admin_session";
+
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthRoute = pathname.startsWith("/login");

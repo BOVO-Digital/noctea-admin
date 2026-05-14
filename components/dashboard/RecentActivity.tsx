@@ -4,9 +4,9 @@ import { unstable_noStore as noStore } from "next/cache";
 
 const PLAN_BADGES: Record<string, { label: string; className: string }> = {
   free: { label: "Gratuit", className: "bg-[#9ba5b3]/10 text-[#9ba5b3] border-[#9ba5b3]/20" },
-  lune: { label: "Lune 🌙", className: "bg-[#7CB9E8]/10 text-[#7CB9E8] border-[#7CB9E8]/20" },
-  etoile: { label: "Étoile ⭐", className: "bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20" },
-  soleil: { label: "Soleil ☀️", className: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+  lune: { label: "Lune", className: "bg-[#7CB9E8]/10 text-[#7CB9E8] border-[#7CB9E8]/20" },
+  etoile: { label: "Étoile", className: "bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20" },
+  soleil: { label: "Soleil", className: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
 };
 
 export default async function RecentActivity() {

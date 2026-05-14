@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { verifySession } from "@/lib/auth/session";
 import { FieldValue } from "firebase-admin/firestore";
+import { serializeDoc } from "@/lib/firestore-serialize";
 
 export async function GET() {
   const session = await verifySession();
@@ -12,7 +13,7 @@ export async function GET() {
     .orderBy("createdAt", "desc")
     .limit(50)
     .get();
-  const jobs = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const jobs = snap.docs.map((doc) => ({ id: doc.id, ...serializeDoc(doc.data()) }));
   return NextResponse.json({ jobs });
 }
 

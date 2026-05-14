@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import KpiCard from "@/components/dashboard/KpiCard";
-import { CreditCard, TrendingUp, AlertTriangle, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -20,9 +19,9 @@ interface Subscription {
 }
 
 const PLAN_BADGES: Record<string, { label: string; className: string }> = {
-  lune: { label: "Lune 🌙", className: "bg-[#7CB9E8]/10 text-[#7CB9E8] border-[#7CB9E8]/20" },
-  etoile: { label: "Étoile ⭐", className: "bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20" },
-  soleil: { label: "Soleil ☀️", className: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+  lune: { label: "Lune", className: "bg-[#7CB9E8]/10 text-[#7CB9E8] border-[#7CB9E8]/20" },
+  etoile: { label: "Étoile", className: "bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20" },
+  soleil: { label: "Soleil", className: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
 };
 
 const STATUS_BADGES: Record<string, { label: string; className: string }> = {
@@ -76,13 +75,13 @@ export default function SubscriptionsClient() {
         <KpiCard
           title="MRR estimé"
           value={`${stats.mrr.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €`}
-          icon={TrendingUp}
+          icon="TrendingUp"
           delay={0}
         />
         <KpiCard
           title="Abonnements actifs"
           value={stats.active}
-          icon={CreditCard}
+          icon="CreditCard"
           iconColor="text-emerald-400"
           iconBg="bg-emerald-500/10"
           delay={0.05}
@@ -90,7 +89,7 @@ export default function SubscriptionsClient() {
         <KpiCard
           title="Nouveaux ce mois"
           value={stats.newThisMonth}
-          icon={UserPlus}
+          icon="UserPlus"
           iconColor="text-[#7CB9E8]"
           iconBg="bg-[#7CB9E8]/10"
           delay={0.1}
@@ -98,7 +97,7 @@ export default function SubscriptionsClient() {
         <KpiCard
           title="Impayés"
           value={stats.pastDue}
-          icon={AlertTriangle}
+          icon="AlertTriangle"
           iconColor="text-red-400"
           iconBg="bg-red-500/10"
           delay={0.15}

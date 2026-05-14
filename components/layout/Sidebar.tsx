@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -54,7 +53,7 @@ export default function Sidebar({ adminEmail }: SidebarProps) {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-[#0a0f1a] border-r border-[#1e2a3a] flex flex-col z-40">
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-[#1e2a3a]">
+      <div className="flex items-center gap-3 px-5 h-16 border-b border-[#1e2a3a] flex-shrink-0">
         <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-center justify-center flex-shrink-0">
           <Moon className="w-5 h-5 text-[#D4AF37]" />
         </div>
@@ -92,7 +91,6 @@ export default function Sidebar({ adminEmail }: SidebarProps) {
       </ScrollArea>
 
       <div className="p-3 border-t border-[#1e2a3a]">
-        <Separator className="bg-[#1e2a3a] mb-3" />
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-[#D4AF37]/5 border border-[#D4AF37]/10 mb-2">
           <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
             <span className="text-[#D4AF37] text-sm font-bold">

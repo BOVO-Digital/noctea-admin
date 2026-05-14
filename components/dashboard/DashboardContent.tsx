@@ -2,15 +2,6 @@ import KpiCard from "@/components/dashboard/KpiCard";
 import SignupChart from "@/components/dashboard/SignupChart";
 import PlanChart from "@/components/dashboard/PlanChart";
 import RecentActivity from "@/components/dashboard/RecentActivity";
-import {
-  Users,
-  ListOrdered,
-  UserCheck,
-  CreditCard,
-  HeadphonesIcon,
-  UserPlus,
-  Star,
-} from "lucide-react";
 import { adminDb } from "@/lib/firebase-admin";
 import { unstable_noStore as noStore } from "next/cache";
 
@@ -104,13 +95,13 @@ export default async function DashboardContent() {
         <KpiCard
           title="Utilisateurs totaux"
           value={kpis.totalUsers.toLocaleString("fr-FR")}
-          icon={Users}
+          icon="Users"
           delay={0}
         />
         <KpiCard
           title="Nouveaux cette semaine"
           value={kpis.newUsersThisWeek}
-          icon={UserPlus}
+          icon="UserPlus"
           iconColor="text-[#7CB9E8]"
           iconBg="bg-[#7CB9E8]/10"
           delay={0.05}
@@ -118,7 +109,7 @@ export default async function DashboardContent() {
         <KpiCard
           title="Actifs (30 jours)"
           value={kpis.activeUsers30d}
-          icon={UserCheck}
+          icon="UserCheck"
           iconColor="text-emerald-400"
           iconBg="bg-emerald-500/10"
           delay={0.1}
@@ -126,7 +117,7 @@ export default async function DashboardContent() {
         <KpiCard
           title="Abonnements actifs"
           value={kpis.activeSubscriptions}
-          icon={CreditCard}
+          icon="CreditCard"
           iconColor="text-[#D4AF37]"
           iconBg="bg-[#D4AF37]/10"
           delay={0.15}
@@ -134,7 +125,7 @@ export default async function DashboardContent() {
         <KpiCard
           title="Waitlist total"
           value={kpis.totalWaitlist.toLocaleString("fr-FR")}
-          icon={ListOrdered}
+          icon="ListOrdered"
           iconColor="text-violet-400"
           iconBg="bg-violet-500/10"
           delay={0.2}
@@ -142,7 +133,7 @@ export default async function DashboardContent() {
         <KpiCard
           title="Waitlist cette semaine"
           value={kpis.waitlistThisWeek}
-          icon={Star}
+          icon="Star"
           iconColor="text-[#D4AF37]"
           iconBg="bg-[#D4AF37]/10"
           delay={0.25}
@@ -150,7 +141,7 @@ export default async function DashboardContent() {
         <KpiCard
           title="Tickets ouverts"
           value={kpis.openTickets}
-          icon={HeadphonesIcon}
+          icon="Headphones"
           iconColor="text-orange-400"
           iconBg="bg-orange-500/10"
           delay={0.3}

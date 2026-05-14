@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { verifySession } from "@/lib/auth/session";
+import { serializeDoc } from "@/lib/firestore-serialize";
 
 const PLAN_MRR: Record<string, number> = {
   lune: 4.99,
@@ -13,7 +14,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const snap = await adminDb.collection("subscriptions").orderBy("createdAt", "desc").limit(200).get();
-  const subscriptions = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const subscriptions = snap.docs.map((d) => ({ id: d.id, ...serializeDoc(d.data()) }));
 
   const active = subscriptions.filter((s) => (s as Record<string, string>).status === "active");
   const pastDue = subscriptions.filter((s) => (s as Record<string, string>).status === "past_due");
@@ -34,10 +35,8 @@ export async function GET() {
   const newThisMonth = active.filter((s) => {
     const raw = (s as Record<string, unknown>).createdAt;
     if (!raw) return false;
-    const date = typeof raw === "object" && "toDate" in (raw as Record<string, unknown>)
-      ? (raw as { toDate: () => Date }).toDate()
-      : new Date(raw as string);
-    return date >= monthStart;
+    const date = new Date(raw as string);
+    return !isNaN(date.getTime()) && date >= monthStart;
   }).length;
 
   return NextResponse.json({

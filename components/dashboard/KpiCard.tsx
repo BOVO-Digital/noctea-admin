@@ -1,14 +1,38 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  UserPlus,
+  UserCheck,
+  CreditCard,
+  ListOrdered,
+  Star,
+  Headphones,
+  AlertTriangle,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Users,
+  UserPlus,
+  UserCheck,
+  CreditCard,
+  ListOrdered,
+  Star,
+  Headphones,
+  TrendingUp,
+  AlertTriangle,
+};
 
 interface KpiCardProps {
   title: string;
   value: string | number;
   trend?: number;
-  icon: LucideIcon;
+  icon: string;
   iconColor?: string;
   iconBg?: string;
   subtitle?: string;
@@ -19,12 +43,13 @@ export default function KpiCard({
   title,
   value,
   trend,
-  icon: Icon,
+  icon,
   iconColor = "text-[#D4AF37]",
   iconBg = "bg-[#D4AF37]/10",
   subtitle,
   delay = 0,
 }: KpiCardProps) {
+  const Icon = ICON_MAP[icon] ?? Users;
   const isPositive = trend !== undefined && trend >= 0;
 
   return (

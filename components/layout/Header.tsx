@@ -22,7 +22,7 @@ export default function Header({ breadcrumb, adminEmail }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-[#0f1621]/90 backdrop-blur-md border-b border-[#3a4757] px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-[#0f1621]/90 backdrop-blur-md border-b border-[#3a4757] px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
           {breadcrumb?.map((item, i) => (
             <span key={item.label} className="flex items-center gap-2">

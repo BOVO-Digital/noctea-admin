@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { verifySession } from "@/lib/auth/session";
+import { serializeDoc } from "@/lib/firestore-serialize";
 
 export async function GET(req: NextRequest) {
   const session = await verifySession();
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   if (plan) query = query.where("plan", "==", plan) as typeof query;
 
   const snap = await query.get();
-  const users = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const users = snap.docs.map((doc) => ({ id: doc.id, ...serializeDoc(doc.data()) }));
   return NextResponse.json({ users, total: users.length });
 }
 

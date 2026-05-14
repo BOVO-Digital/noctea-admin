@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { verifySession } from "@/lib/auth/session";
+import { serializeDoc } from "@/lib/firestore-serialize";
 
 export async function GET(req: NextRequest) {
   const session = await verifySession();
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     .limit(limitParam)
     .get();
 
-  const entries = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const entries = snap.docs.map((doc) => ({ id: doc.id, ...serializeDoc(doc.data()) }));
   return NextResponse.json({ entries, total: entries.length });
 }
 

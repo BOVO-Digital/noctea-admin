@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { verifySession } from "@/lib/auth/session";
+import { serializeDoc } from "@/lib/firestore-serialize";
 
 export async function GET(
   _req: NextRequest,
@@ -13,5 +14,5 @@ export async function GET(
   const doc = await adminDb.collection("users").doc(uid).get();
   if (!doc.exists) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
 
-  return NextResponse.json({ user: { id: doc.id, ...doc.data() } });
+  return NextResponse.json({ user: { id: doc.id, ...serializeDoc(doc.data()!) } });
 }

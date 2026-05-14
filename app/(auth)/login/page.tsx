@@ -68,7 +68,15 @@ export default function LoginPage() {
       router.push("/");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur de connexion";
-      toast.error(msg.includes("accès") ? msg : "Connexion échouée. Vérifiez vos droits admin.");
+      if (msg.includes("popup-closed") || msg.includes("cancelled")) {
+        // Fenêtre fermée par l'utilisateur — pas d'erreur à afficher
+      } else if (msg.includes("NEXT_PUBLIC_FIREBASE_API_KEY")) {
+        toast.error("Configuration Firebase manquante — remplissez le .env.local");
+      } else if (msg.includes("Accès refusé") || msg.includes("accès")) {
+        toast.error(msg);
+      } else {
+        toast.error(`Connexion échouée : ${msg}`);
+      }
     } finally {
       setLoadingProvider(null);
     }

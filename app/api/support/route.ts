@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { verifySession } from "@/lib/auth/session";
 import { FieldValue } from "firebase-admin/firestore";
+import { serializeDoc } from "@/lib/firestore-serialize";
 import { Resend } from "resend";
 
 export async function GET(req: NextRequest) {
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (status) query = query.where("status", "==", status) as typeof query;
 
   const snap = await query.get();
-  const tickets = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const tickets = snap.docs.map((doc) => ({ id: doc.id, ...serializeDoc(doc.data()) }));
   return NextResponse.json({ tickets });
 }
 
