@@ -99,7 +99,7 @@ export default function LoginPage() {
         <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-8 shadow-2xl">
           <div className="flex flex-col items-center mb-8">
             <Image
-              src="/logo-gold-navy.png"
+              src="/logo.png"
               alt="NOCTEA"
               width={140}
               height={100}

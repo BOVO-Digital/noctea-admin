@@ -55,7 +55,7 @@ export default function Sidebar({ adminEmail }: SidebarProps) {
     <aside className="fixed left-0 top-0 h-screen w-64 bg-[#0a0f1a] border-r border-[#1e2a3a] flex flex-col z-40">
       <div className="flex items-center justify-between px-4 h-16 border-b border-[#1e2a3a] flex-shrink-0">
         <Image
-          src="/logo-gold-navy.png"
+          src="/logo.png"
           alt="NOCTEA"
           width={110}
           height={44}
