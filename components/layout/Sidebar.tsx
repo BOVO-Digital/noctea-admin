@@ -57,9 +57,10 @@ export default function Sidebar({ adminEmail }: SidebarProps) {
         <Image
           src="/logo.png"
           alt="NOCTEA"
-          width={110}
-          height={44}
+          width={120}
+          height={120}
           className="object-contain"
+          style={{ height: '44px', width: 'auto' }}
           priority
         />
         <span className="text-[#9ba5b3] text-[10px] font-medium tracking-widest uppercase bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] px-2 py-0.5 rounded-md">
