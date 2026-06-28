@@ -37,10 +37,14 @@ import {
   ArrowUpCircle,
   Mail,
   Loader2,
+  Bot,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import type { AiConfig } from "@/lib/ai-config";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 interface AdminEntry {
   id: string;
@@ -85,11 +89,21 @@ export default function SettingsClient() {
   // Révoquer
   const [revokeTarget, setRevokeTarget] = useState<AdminEntry | null>(null);
 
+  const [aiConfig, setAiConfig] = useState<AiConfig | null>(null);
+  const [aiSaving, setAiSaving] = useState(false);
+
   const loadData = async () => {
     try {
-      const res = await fetch("/api/settings");
-      const json = await res.json();
+      const [settingsRes, aiRes] = await Promise.all([
+        fetch("/api/settings"),
+        fetch("/api/settings/ai-config"),
+      ]);
+      const json = await settingsRes.json();
       setData(json);
+      if (aiRes.ok) {
+        const aiJson = (await aiRes.json()) as { config?: AiConfig };
+        setAiConfig(aiJson.config ?? null);
+      }
     } catch {
       toast.error("Erreur lors du chargement");
     } finally {
@@ -98,6 +112,26 @@ export default function SettingsClient() {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  async function saveAiConfig() {
+    if (!aiConfig) return;
+    setAiSaving(true);
+    try {
+      const res = await fetch("/api/settings/ai-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiConfig),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setAiConfig(json.config);
+      toast.success("Configuration IA enregistrée");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur sauvegarde IA");
+    } finally {
+      setAiSaving(false);
+    }
+  }
 
   // ── Promouvoir un utilisateur existant ──────────────────────────────────────
   async function handlePromote() {
@@ -354,55 +388,131 @@ export default function SettingsClient() {
 
         {/* ── Onglet Config ────────────────────────────────────────────────── */}
         <TabsContent value="config">
-          <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-5">
-            <h3 className="text-white font-semibold mb-4">Configuration NOCTEA</h3>
-            <div className="space-y-5">
-              <div>
-                <h4 className="text-[#9ba5b3] text-xs uppercase tracking-wider mb-3">Quotas IA par plan</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { plan: "Lune", default: 5, color: "text-[#7CB9E8]" },
-                    { plan: "Étoile", default: -1, color: "text-[#D4AF37]" },
-                    { plan: "Soleil", default: -1, color: "text-amber-400" },
-                  ].map((item) => (
-                    <div key={item.plan} className="bg-[#212d40] rounded-xl p-3">
-                      <Label className={`${item.color} text-xs mb-2 block`}>Plan {item.plan}</Label>
-                      <Input
-                        type="number"
-                        defaultValue={item.default === -1 ? "" : item.default}
-                        placeholder={item.default === -1 ? "∞ illimité" : ""}
-                        className="bg-[#0f1621] border-[#3a4757] text-white h-8 text-sm"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Separator className="bg-[#3a4757]" />
-              <div>
-                <h4 className="text-[#9ba5b3] text-xs uppercase tracking-wider mb-3">URLs stores</h4>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-[#9ba5b3] text-xs">App Store</Label>
-                    <Input className="bg-[#0f1621] border-[#3a4757] text-white h-9" placeholder="https://apps.apple.com/..." />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[#9ba5b3] text-xs">Google Play</Label>
-                    <Input className="bg-[#0f1621] border-[#3a4757] text-white h-9" placeholder="https://play.google.com/..." />
-                  </div>
-                </div>
-              </div>
-              <Separator className="bg-[#3a4757]" />
-              <div>
-                <h4 className="text-[#9ba5b3] text-xs uppercase tracking-wider mb-3">Email expéditeur</h4>
-                <div className="space-y-1.5">
-                  <Label className="text-[#9ba5b3] text-xs">Adresse Resend</Label>
-                  <Input defaultValue="noreply@noctea.app" className="bg-[#0f1621] border-[#3a4757] text-white h-9" />
-                </div>
-              </div>
-              <Button className="bg-[#D4AF37] hover:bg-[#c4a030] text-[#0f1621] font-semibold">
-                Sauvegarder la configuration
-              </Button>
+          <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-5 space-y-6">
+            <div className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-[#D4AF37]" />
+              <h3 className="text-white font-semibold">Configuration IA</h3>
             </div>
+
+            {!aiConfig ? (
+              <Skeleton className="h-32 rounded-xl bg-[#212d40]" />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[#9ba5b3] text-xs">Modèle génération contenu</Label>
+                    <Input
+                      value={aiConfig.contentModel}
+                      onChange={(e) => setAiConfig({ ...aiConfig, contentModel: e.target.value })}
+                      className="bg-[#0f1621] border-[#3a4757] text-white h-9"
+                      placeholder="gpt-4o-mini"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[#9ba5b3] text-xs">Modèle assistant (Étoile)</Label>
+                    <Input
+                      value={aiConfig.assistantModel}
+                      onChange={(e) => setAiConfig({ ...aiConfig, assistantModel: e.target.value })}
+                      className="bg-[#0f1621] border-[#3a4757] text-white h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[#9ba5b3] text-xs">Modèle assistant premium (Soleil)</Label>
+                    <Input
+                      value={aiConfig.assistantPremiumModel}
+                      onChange={(e) =>
+                        setAiConfig({ ...aiConfig, assistantPremiumModel: e.target.value })
+                      }
+                      className="bg-[#0f1621] border-[#3a4757] text-white h-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[#9ba5b3] text-xs">
+                    Prompt système contenu (partie éditoriale modifiable)
+                  </Label>
+                  <Textarea
+                    value={aiConfig.contentSystemPromptExtra}
+                    onChange={(e) =>
+                      setAiConfig({ ...aiConfig, contentSystemPromptExtra: e.target.value })
+                    }
+                    className="bg-[#0f1621] border-[#3a4757] text-white min-h-[120px]"
+                  />
+                  <p className="text-[#9ba5b3] text-xs">
+                    Les règles médicales et le format JSON restent codés côté serveur.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[#9ba5b3] text-xs">
+                    Prompt système assistant (partie modifiable)
+                  </Label>
+                  <Textarea
+                    value={aiConfig.assistantSystemPromptExtra}
+                    onChange={(e) =>
+                      setAiConfig({ ...aiConfig, assistantSystemPromptExtra: e.target.value })
+                    }
+                    className="bg-[#0f1621] border-[#3a4757] text-white min-h-[90px]"
+                  />
+                </div>
+
+                <Separator className="bg-[#3a4757]" />
+
+                <div>
+                  <h4 className="text-[#9ba5b3] text-xs uppercase tracking-wider mb-3">
+                    Quotas assistant / mois
+                  </h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { key: "quotaLune" as const, label: "Lune", placeholder: "5" },
+                      { key: "quotaEtoile" as const, label: "Étoile", placeholder: "∞" },
+                      { key: "quotaSoleil" as const, label: "Soleil", placeholder: "∞" },
+                    ].map((item) => (
+                      <div key={item.key} className="bg-[#212d40] rounded-xl p-3">
+                        <Label className="text-[#D4AF37] text-xs mb-2 block">{item.label}</Label>
+                        <Input
+                          type="number"
+                          value={aiConfig[item.key] === -1 ? "" : aiConfig[item.key]}
+                          placeholder={item.placeholder}
+                          onChange={(e) => {
+                            const val = e.target.value === "" ? -1 : Number(e.target.value);
+                            setAiConfig({ ...aiConfig, [item.key]: val });
+                          }}
+                          className="bg-[#0f1621] border-[#3a4757] text-white h-8 text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-6">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={aiConfig.aiContentEnabled}
+                      onCheckedChange={(v) => setAiConfig({ ...aiConfig, aiContentEnabled: v })}
+                    />
+                    <Label className="text-[#e5e7eb] text-sm">Génération contenu IA active</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={aiConfig.aiAssistantEnabled}
+                      onCheckedChange={(v) => setAiConfig({ ...aiConfig, aiAssistantEnabled: v })}
+                    />
+                    <Label className="text-[#e5e7eb] text-sm">Assistant parent actif</Label>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={saveAiConfig}
+                  disabled={aiSaving}
+                  className="bg-[#D4AF37] hover:bg-[#c4a030] text-[#0f1621] font-semibold gap-2"
+                >
+                  {aiSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  Sauvegarder la configuration IA
+                </Button>
+              </>
+            )}
           </div>
         </TabsContent>
       </Tabs>
