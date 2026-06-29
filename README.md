@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NOCTEA Admin
 
-## Getting Started
+Back-office NOCTEA — gestion contenu, utilisateurs, signalements et configuration IA.
 
-First, run the development server:
+> **Dépôt** : `BOVO-Digital/noctea-admin`  
+> **Stack** : Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · Firebase Admin  
+> **Firebase** : `noctea-dev`
+
+---
+
+## Démarrage local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd noctea-admin
+cp .env.example .env.local   # compléter les clés Firebase Admin
+npm install
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Premier admin : appeler la Cloud Function `bootstrapAdmin` (voir `DEPLOY.md`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Modules
 
-## Learn More
+| Route | Description |
+|-------|-------------|
+| `/login` | Auth admin Firebase |
+| `/content` | CMS — articles, stories, conseils, wellbeing |
+| `/content` (onglet Signalements) | Modération `content_reports` |
+| `/settings` | Config modèles IA + prompts éditables |
+| `/users` | Gestion utilisateurs |
+| `/emails` | Templates email |
+| `/notifications` | Push (structure) |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Workflow contenu IA
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Génération IA → statut `pending_review` (jamais publié directement)
+2. Validation admin → `published` ou `scheduled`
+3. Modification d'un contenu publié → repasse `pending_review`
+4. Refus → `archived`
+5. Signalements mobile → traitement dans l'onglet Signalements
 
-## Deploy on Vercel
+Collection Firestore : **`contents`** (champ `_type`, `targetPlan`, `showAiMention`, `sources`, `scheduledAt`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API routes principales
+
+- `GET/POST/PATCH/DELETE /api/content`
+- `POST /api/content/ai-generate`
+- `POST /api/content/ai-regenerate-section`
+- `GET/PATCH/POST /api/content-reports`
+- `GET/PATCH /api/settings/ai-config`
+
+---
+
+## Déploiement
+
+Voir **`DEPLOY.md`** (Vercel + variables d'environnement).
+
+---
+
+## Fichiers de suivi
+
+- Roadmap : `../tasklists/admin.md`
+- Décisions meeting contenu : `../new.md`
+- État écosystème : `../STATE.md`
