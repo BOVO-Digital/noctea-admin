@@ -145,6 +145,8 @@ export default function UsersTable() {
   const columns: ColumnDef<User>[] = [
     {
       id: "user",
+      accessorFn: (row) =>
+        `${row.displayName ?? ""} ${row.email ?? ""} ${row.id}`.toLowerCase(),
       header: "Utilisateur",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
@@ -156,8 +158,31 @@ export default function UsersTable() {
           <div>
             <p className="text-white text-sm font-medium">{row.original.displayName ?? "Sans nom"}</p>
             <p className="text-[#9ba5b3] text-xs">{row.original.email}</p>
+            <p className="text-[#9ba5b3]/60 text-[10px] font-mono mt-0.5">{row.original.id}</p>
           </div>
         </div>
+      ),
+    },
+    {
+      accessorKey: "id",
+      header: "UID",
+      cell: ({ row }) => (
+        <button
+          type="button"
+          title="Copier l'UID"
+          onClick={async (e) => {
+            e.stopPropagation();
+            try {
+              await navigator.clipboard.writeText(row.original.id);
+              toast.success("UID copié");
+            } catch {
+              toast.error("Impossible de copier");
+            }
+          }}
+          className="text-[#7CB9E8] text-xs font-mono hover:text-[#D4AF37] max-w-[120px] truncate"
+        >
+          {row.original.id}
+        </button>
       ),
     },
     {

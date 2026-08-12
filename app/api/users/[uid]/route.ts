@@ -11,8 +11,20 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const { uid } = await params;
-  const doc = await adminDb.collection("users").doc(uid).get();
-  if (!doc.exists) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+  const [userDoc, subDoc] = await Promise.all([
+    adminDb.collection("users").doc(uid).get(),
+    adminDb.collection("subscriptions").doc(uid).get(),
+  ]);
 
-  return NextResponse.json({ user: { id: doc.id, ...serializeDoc(doc.data()!) } });
+  if (!userDoc.exists) {
+    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    user: {
+      id: userDoc.id,
+      ...serializeDoc(userDoc.data()!),
+      subscription: subDoc.exists ? serializeDoc(subDoc.data()!) : null,
+    },
+  });
 }

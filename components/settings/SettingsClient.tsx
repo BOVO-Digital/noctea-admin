@@ -38,6 +38,7 @@ import {
   Mail,
   Loader2,
   Bot,
+  Store,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -91,18 +92,28 @@ export default function SettingsClient() {
 
   const [aiConfig, setAiConfig] = useState<AiConfig | null>(null);
   const [aiSaving, setAiSaving] = useState(false);
+  const [storeLinks, setStoreLinks] = useState({ appStoreUrl: "", playStoreUrl: "" });
+  const [storeSaving, setStoreSaving] = useState(false);
 
   const loadData = async () => {
     try {
-      const [settingsRes, aiRes] = await Promise.all([
+      const [settingsRes, aiRes, storeRes] = await Promise.all([
         fetch("/api/settings"),
         fetch("/api/settings/ai-config"),
+        fetch("/api/settings/store-links"),
       ]);
       const json = await settingsRes.json();
       setData(json);
       if (aiRes.ok) {
         const aiJson = (await aiRes.json()) as { config?: AiConfig };
         setAiConfig(aiJson.config ?? null);
+      }
+      if (storeRes.ok) {
+        const storeJson = await storeRes.json();
+        setStoreLinks({
+          appStoreUrl: storeJson.appStoreUrl ?? "",
+          playStoreUrl: storeJson.playStoreUrl ?? "",
+        });
       }
     } catch {
       toast.error("Erreur lors du chargement");
@@ -130,6 +141,28 @@ export default function SettingsClient() {
       toast.error(err instanceof Error ? err.message : "Erreur sauvegarde IA");
     } finally {
       setAiSaving(false);
+    }
+  }
+
+  async function saveStoreLinks() {
+    setStoreSaving(true);
+    try {
+      const res = await fetch("/api/settings/store-links", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(storeLinks),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setStoreLinks({
+        appStoreUrl: json.appStoreUrl,
+        playStoreUrl: json.playStoreUrl,
+      });
+      toast.success("Liens stores enregistrés — la landing les lit depuis Firestore");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur sauvegarde liens");
+    } finally {
+      setStoreSaving(false);
     }
   }
 
@@ -215,6 +248,10 @@ export default function SettingsClient() {
           </TabsTrigger>
           <TabsTrigger value="logs" className="data-[state=active]:bg-[#D4AF37]/10 data-[state=active]:text-[#D4AF37] text-[#9ba5b3] gap-2">
             Logs système
+          </TabsTrigger>
+          <TabsTrigger value="stores" className="data-[state=active]:bg-[#D4AF37]/10 data-[state=active]:text-[#D4AF37] text-[#9ba5b3] gap-2">
+            <Store className="w-3.5 h-3.5" />
+            Stores
           </TabsTrigger>
           <TabsTrigger value="config" className="data-[state=active]:bg-[#D4AF37]/10 data-[state=active]:text-[#D4AF37] text-[#9ba5b3] gap-2">
             Configuration
@@ -387,6 +424,46 @@ export default function SettingsClient() {
         </TabsContent>
 
         {/* ── Onglet Config ────────────────────────────────────────────────── */}
+        <TabsContent value="stores">
+          <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-5 space-y-4">
+            <div>
+              <h3 className="text-white font-semibold">Liens App Store & Google Play</h3>
+              <p className="text-[#9ba5b3] text-xs mt-1">
+                Ces URLs sont lues par la landing (Firestore <code className="text-[#7CB9E8]">settings/app</code>).
+                Corrige le package Android : <code className="text-[#7CB9E8]">app.noctea.mobile</code>.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-[#9ba5b3] text-xs">URL App Store</Label>
+                <Input
+                  value={storeLinks.appStoreUrl}
+                  onChange={(e) => setStoreLinks({ ...storeLinks, appStoreUrl: e.target.value })}
+                  className="bg-[#0f1621] border-[#3a4757] text-white h-9 font-mono text-xs"
+                  placeholder="https://apps.apple.com/app/idXXXXXXXX"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[#9ba5b3] text-xs">URL Google Play</Label>
+                <Input
+                  value={storeLinks.playStoreUrl}
+                  onChange={(e) => setStoreLinks({ ...storeLinks, playStoreUrl: e.target.value })}
+                  className="bg-[#0f1621] border-[#3a4757] text-white h-9 font-mono text-xs"
+                  placeholder="https://play.google.com/store/apps/details?id=app.noctea.mobile"
+                />
+              </div>
+            </div>
+            <Button
+              onClick={saveStoreLinks}
+              disabled={storeSaving}
+              className="bg-[#D4AF37] hover:bg-[#c4a030] text-[#0f1621] font-semibold gap-2"
+            >
+              {storeSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Store className="w-4 h-4" />}
+              Enregistrer les liens
+            </Button>
+          </div>
+        </TabsContent>
+
         <TabsContent value="config">
           <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-5 space-y-6">
             <div className="flex items-center gap-2">

@@ -26,7 +26,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Shield, Ban, Trash2, User, CreditCard, MessageSquare } from "lucide-react";
+import {
+  ArrowLeft,
+  Shield,
+  Ban,
+  Trash2,
+  User,
+  CreditCard,
+  MessageSquare,
+  Copy,
+  Gift,
+  Loader2,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -39,11 +50,19 @@ interface UserData {
   plan?: string;
   status?: string;
   role?: string;
-  createdAt?: { toDate?: () => Date } | string;
-  lastActiveAt?: { toDate?: () => Date } | string;
+  createdAt?: string;
+  lastActiveAt?: string;
+  planExpiresAt?: string;
+  planGrantedBy?: string;
   childrenCount?: number;
   aiQuestionsThisMonth?: number;
   aiQuestionsTotal?: number;
+  subscription?: {
+    plan?: string;
+    status?: string;
+    source?: string;
+    currentPeriodEnd?: string;
+  } | null;
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -59,34 +78,68 @@ export default function UserDetailClient({ uid }: { uid: string }) {
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmAdmin, setConfirmAdmin] = useState(false);
+  const [granting, setGranting] = useState(false);
+  const [grantPlan, setGrantPlan] = useState("etoile");
+
+  async function load() {
+    try {
+      const res = await fetch(`/api/users/${uid}`);
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      setUser(json.user);
+    } catch {
+      toast.error("Utilisateur introuvable");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch(`/api/users/${uid}`);
-        if (!res.ok) throw new Error();
-        const json = await res.json();
-        setUser(json.user);
-      } catch {
-        toast.error("Utilisateur introuvable");
-      } finally {
-        setLoading(false);
-      }
-    }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
+
+  async function copyUid() {
+    try {
+      await navigator.clipboard.writeText(uid);
+      toast.success("UID copié — colle-le dans RevenueCat si besoin");
+    } catch {
+      toast.error("Impossible de copier");
+    }
+  }
 
   async function updatePlan(plan: string) {
     try {
-      await fetch("/api/users", {
+      const res = await fetch("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, updates: { plan } }),
       });
-      setUser((prev) => prev ? { ...prev, plan } : prev);
+      if (!res.ok) throw new Error();
+      setUser((prev) => (prev ? { ...prev, plan } : prev));
       toast.success(`Plan mis à jour : ${plan}`);
+      await load();
     } catch {
       toast.error("Erreur lors de la mise à jour");
+    }
+  }
+
+  async function grantMonth() {
+    setGranting(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid, action: "grant", plan: grantPlan, days: 30 }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+      toast.success(`1 mois ${grantPlan} accordé jusqu'au ${format(new Date(json.expiresAt), "d MMM yyyy", { locale: fr })}`);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors du grant");
+    } finally {
+      setGranting(false);
     }
   }
 
@@ -99,7 +152,7 @@ export default function UserDetailClient({ uid }: { uid: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, updates: { status: newStatus } }),
       });
-      setUser((prev) => prev ? { ...prev, status: newStatus } : prev);
+      setUser((prev) => (prev ? { ...prev, status: newStatus } : prev));
       toast.success(`Compte ${newStatus === "suspended" ? "suspendu" : "réactivé"}`);
     } catch {
       toast.error("Erreur lors de la mise à jour");
@@ -130,7 +183,7 @@ export default function UserDetailClient({ uid }: { uid: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, action: "promote" }),
       });
-      setUser((prev) => prev ? { ...prev, role: "admin" } : prev);
+      setUser((prev) => (prev ? { ...prev, role: "admin" } : prev));
       toast.success(`${user.email} est maintenant admin`);
     } catch {
       toast.error("Erreur lors de la promotion");
@@ -161,10 +214,8 @@ export default function UserDetailClient({ uid }: { uid: string }) {
     );
   }
 
-  const createdDate = user.createdAt && typeof user.createdAt === "object" && "toDate" in user.createdAt
-    ? user.createdAt.toDate!()
-    : user.createdAt ? new Date(user.createdAt as string) : null;
-
+  const createdDate = user.createdAt ? new Date(user.createdAt) : null;
+  const expiresDate = user.planExpiresAt ? new Date(user.planExpiresAt) : null;
   const planColor = PLAN_COLORS[user.plan ?? "free"] ?? PLAN_COLORS.free;
 
   return (
@@ -193,16 +244,18 @@ export default function UserDetailClient({ uid }: { uid: string }) {
             <div>
               <h2 className="text-xl font-bold text-white">{user.displayName ?? "Sans nom"}</h2>
               <p className="text-[#9ba5b3]">{user.email}</p>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <span className={`text-sm font-semibold ${planColor}`}>Plan {user.plan ?? "free"}</span>
                 {user.role === "admin" && (
                   <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 text-xs">Admin</Badge>
                 )}
                 <Badge
                   variant="outline"
-                  className={user.status === "suspended"
-                    ? "bg-red-500/10 text-red-400 border-red-500/20 text-xs"
-                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs"}
+                  className={
+                    user.status === "suspended"
+                      ? "bg-red-500/10 text-red-400 border-red-500/20 text-xs"
+                      : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs"
+                  }
                 >
                   {user.status === "suspended" ? "Suspendu" : "Actif"}
                 </Badge>
@@ -257,7 +310,7 @@ export default function UserDetailClient({ uid }: { uid: string }) {
 
         <Separator className="bg-[#3a4757] my-5" />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="text-[#9ba5b3] text-xs mb-1">Inscrit le</p>
             <p className="text-white text-sm font-medium">
@@ -265,13 +318,22 @@ export default function UserDetailClient({ uid }: { uid: string }) {
             </p>
           </div>
           <div>
-            <p className="text-[#9ba5b3] text-xs mb-1">ID</p>
-            <p className="text-white text-xs font-mono truncate">{user.id}</p>
+            <p className="text-[#9ba5b3] text-xs mb-1">UID Firebase / RevenueCat</p>
+            <button
+              type="button"
+              onClick={copyUid}
+              className="flex items-center gap-2 text-left group"
+            >
+              <p className="text-[#7CB9E8] text-xs font-mono break-all group-hover:text-[#D4AF37]">
+                {user.id}
+              </p>
+              <Copy className="w-3.5 h-3.5 text-[#9ba5b3] group-hover:text-[#D4AF37] shrink-0" />
+            </button>
           </div>
         </div>
       </motion.div>
 
-      <Tabs defaultValue="info" className="space-y-4">
+      <Tabs defaultValue="subscription" className="space-y-4">
         <TabsList className="bg-[#1a2332] border border-[#3a4757]">
           <TabsTrigger value="info" className="data-[state=active]:bg-[#D4AF37]/10 data-[state=active]:text-[#D4AF37] text-[#9ba5b3] gap-2">
             <User className="w-3.5 h-3.5" />
@@ -299,16 +361,72 @@ export default function UserDetailClient({ uid }: { uid: string }) {
                 <p className="text-[#9ba5b3] text-xs mb-1">Email</p>
                 <p className="text-white">{user.email ?? "—"}</p>
               </div>
+              <div className="col-span-2">
+                <p className="text-[#9ba5b3] text-xs mb-1">UID</p>
+                <p className="text-white text-sm font-mono break-all">{user.id}</p>
+              </div>
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="subscription">
-          <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-5">
-            <h3 className="text-white font-semibold mb-4">Abonnement actuel</h3>
-            <div className="text-center py-8 text-[#9ba5b3]">
-              <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Plan actuel : <span className={planColor}>{user.plan ?? "free"}</span></p>
+          <div className="bg-[#1a2332] border border-[#3a4757] rounded-2xl p-5 space-y-5">
+            <h3 className="text-white font-semibold">Abonnement</h3>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-[#212d40] rounded-xl p-3">
+                <p className="text-[#9ba5b3] text-xs mb-1">Plan</p>
+                <p className={`font-semibold ${planColor}`}>{user.plan ?? "free"}</p>
+              </div>
+              <div className="bg-[#212d40] rounded-xl p-3">
+                <p className="text-[#9ba5b3] text-xs mb-1">Source</p>
+                <p className="text-white text-sm">{user.subscription?.source ?? "—"}</p>
+              </div>
+              <div className="bg-[#212d40] rounded-xl p-3">
+                <p className="text-[#9ba5b3] text-xs mb-1">Expire le</p>
+                <p className="text-white text-sm">
+                  {expiresDate ? format(expiresDate, "d MMM yyyy", { locale: fr }) : "—"}
+                </p>
+              </div>
+              <div className="bg-[#212d40] rounded-xl p-3">
+                <p className="text-[#9ba5b3] text-xs mb-1">Accordé par</p>
+                <p className="text-white text-sm truncate">{user.planGrantedBy ?? "—"}</p>
+              </div>
+            </div>
+
+            <Separator className="bg-[#3a4757]" />
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Gift className="w-4 h-4 text-[#D4AF37]" />
+                <h4 className="text-white font-medium text-sm">Accorder 1 mois gratuit (testeurs)</h4>
+              </div>
+              <p className="text-[#9ba5b3] text-xs leading-relaxed">
+                Active le plan dans Firestore (users + subscriptions) pendant 30 jours.
+                L&apos;app lit ce plan même sans achat store. Le parent doit avoir créé un compte et ouvert l&apos;app une fois.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={grantPlan} onValueChange={setGrantPlan}>
+                  <SelectTrigger className="w-36 bg-[#0f1621] border-[#3a4757] text-white h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a2332] border-[#3a4757]">
+                    {["lune", "etoile", "soleil"].map((p) => (
+                      <SelectItem key={p} value={p} className="text-[#e5e7eb] focus:bg-[#212d40]">
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={grantMonth}
+                  disabled={granting}
+                  className="bg-[#D4AF37] hover:bg-[#c4a030] text-[#0f1621] font-semibold gap-2 h-9"
+                >
+                  {granting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+                  Accorder 30 jours
+                </Button>
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -340,7 +458,9 @@ export default function UserDetailClient({ uid }: { uid: string }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-[#3a4757] bg-[#212d40] text-[#e5e7eb]">Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white">Supprimer</AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white">
+              Supprimer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -355,7 +475,9 @@ export default function UserDetailClient({ uid }: { uid: string }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-[#3a4757] bg-[#212d40] text-[#e5e7eb]">Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={promoteAdmin} className="bg-[#D4AF37] hover:bg-[#c4a030] text-[#0f1621] font-semibold">Promouvoir</AlertDialogAction>
+            <AlertDialogAction onClick={promoteAdmin} className="bg-[#D4AF37] hover:bg-[#c4a030] text-[#0f1621] font-semibold">
+              Promouvoir
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
