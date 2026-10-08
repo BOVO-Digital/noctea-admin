@@ -55,6 +55,7 @@ export async function PATCH(req: NextRequest) {
       adminDb.collection("users").doc(uid).set(
         {
           plan,
+          grantedPlan: plan,
           planExpiresAt: expiresAt,
           planGrantedBy: session.email ?? session.uid,
           planGrantedAt: now,
